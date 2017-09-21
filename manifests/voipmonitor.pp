@@ -92,8 +92,8 @@ class asterisk::voipmonitor {
 		enable => true,
 		ensure => running
 	} -> 
-	apache::vhost {'voipmonitor_gui http':
-		servername => 'voipmonitor',
+	apache::vhost {'voipmonitor':
+		servername => "$::fqdn",
 		port		=> '2080',
 		docroot		=> $guidir,
 	}

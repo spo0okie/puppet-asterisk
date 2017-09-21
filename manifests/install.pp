@@ -14,7 +14,7 @@ class asterisk::install {
 	$srcdir="$tmpdir/asterisk-$version"
 
 	case $::operatingsystem {
-		OpenSuSE: {
+		'OpenSuSE': {
 			package {
 				'libxml2-2':		ensure => installed;
 				'sqlite3':			ensure => installed;
