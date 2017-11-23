@@ -1,7 +1,7 @@
 class asterisk::snappy_install {
 	$tmpdir='/tmp/ast.snappy_inst'
 	file {$tmpdir:
-		ensure=>directory
+		ensure	=> directory
 	} ->
 	file {"$tmpdir/snappy.zip":
 		ensure	=> file,

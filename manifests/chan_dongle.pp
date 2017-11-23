@@ -7,7 +7,7 @@
 class asterisk::chan_dongle {
 	$tmpdir='/tmp/ast.dongle_inst'
 	file {$tmpdir:
-		ensure=>directory
+		ensure	=> directory
 	} ->
 	file {"$tmpdir/dongle.zip":
 		ensure	=> file,

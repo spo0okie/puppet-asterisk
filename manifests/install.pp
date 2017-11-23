@@ -3,7 +3,7 @@ class asterisk::install {
 	#более того, надо указать require Exec['install_dahdi']
 	#чтобы убедиться что все встало
 	include asterisk::dahdi
-
+	include sox
 	#версия поставляемого астериска
 	$version='11.25.1'
 

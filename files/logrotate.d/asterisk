@@ -1,0 +1,10 @@
+/var/log/asterisk/*log {
+	missingok
+	notifempty
+	sharedscripts
+	compress
+	delaycompress
+	olddir /var/log/asterisk/old
+	maxage 90
+	size 64M
+}
