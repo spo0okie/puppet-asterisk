@@ -1,3 +1,6 @@
+/var/log/asterisk/security
+/var/log/asterisk/messages
+/var/log/asterisk/full
 /var/log/asterisk/*log {
 	missingok
 	notifempty
@@ -5,6 +8,9 @@
 	compress
 	delaycompress
 	olddir /var/log/asterisk/old
-	maxage 90
+	maxage 720
 	size 64M
+	postrotate
+		/usr/sbin/asterisk -rx 'logger reload' > /dev/null 2> /dev/null 
+	endscript
 }
