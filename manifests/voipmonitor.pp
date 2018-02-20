@@ -71,21 +71,21 @@ class asterisk::voipmonitor {
 		command => 'echo "create database voipmonitor" | mysql',
 		cwd		=> $tmpdir,
 		unless	=> 'echo "show databases" | mysql | grep voipmonitor',
-		notify	=> Service ['voipmonitor'],
+		notify	=> Service['voipmonitor'],
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	exec {'install_ioncube':
 		command => 'wget --no-continue http://voipmonitor.org/ioncube/x86_64/ioncube_loader_lin_5.6.so -O /opt/remi/php56/root/usr/lib64/php/modules/ioncube_loader_lin_5.6.so',
 		cwd		=> $tmpdir,
 		unless	=> 'test -f /opt/remi/php56/root/usr/lib64/php/modules/ioncube_loader_lin_5.6.so',
-		notify	=> Service ['httpd'],
+		notify	=> Service['httpd'],
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	exec {'install_ioncube_conf':
 		command => 'echo "zend_extension = /opt/remi/php56/root/usr/lib64/php/modules/ioncube_loader_lin_5.6.so" > /opt/remi/php56/root/etc/php.d/ioncube.ini',
 		cwd		=> $tmpdir,
 		unless	=> 'test -f /opt/remi/php56/root/etc/php.d/ioncube.ini',
-		notify	=> Service ['httpd'],
+		notify	=> Service['httpd'],
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	service {'voipmonitor':
