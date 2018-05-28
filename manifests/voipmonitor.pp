@@ -96,8 +96,17 @@ class asterisk::voipmonitor {
 		servername => "$::fqdn",
 		port		=> '2080',
 		docroot		=> $guidir,
+	} 
+	file {"/usr/local/etc/voipmonitor/":
+		ensure	=> directory,
+		owner	=> 'root',
+		mode	=> '0777',
+	} ->
+	file {"/usr/local/etc/voipmonitor/voipmon.cdr.trim.sh":
+		ensure	=> file,
+		source	=> 'puppet:///modules/asterisk/voipmon.cdr.trim.sh',
+		mode => '0755',
 	}
-	
 
 
 }
