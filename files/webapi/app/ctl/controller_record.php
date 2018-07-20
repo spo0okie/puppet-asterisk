@@ -41,7 +41,7 @@ class controller_record{
 				$org.'/'.
 				(explode('-',$name)[0]).'/'.
 				$name.'.mp3';
-		
+		$file=str_replace(' ','+',$file);
 		if (file_exists($file)) {
 			controller_record::force_download($file);
 		} else {
