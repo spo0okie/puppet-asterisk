@@ -13,36 +13,7 @@ class asterisk::install {
 	#папка исходников куда все распакуется
 	$srcdir="$tmpdir/asterisk-$version"
 
-	case $::operatingsystem {
-		'OpenSuSE': {
-			package {
-				'libxml2-2':		ensure => installed;
-				'sqlite3':			ensure => installed;
-				'sqlite3-devel':	ensure => installed;
-				'libogg0':			ensure => installed;	#for voipmonitor
-				'libspandsp2':		ensure => installed;	#need for fax support
-				'libvorbis0':		ensure => installed;	#for voipmonitor
-			}
-		}
-		default: {
-			package {
-				'libxml2':			ensure => installed;
-				'sqlite':			ensure => installed;
-				'sqlite-devel':		ensure => installed;
-				'libogg':			ensure => installed;	#for voipmonitor
-				'spandsp':			ensure => installed;	#need for fax support
-				'libvorbis':		ensure => installed;	#for voipmonitor
-			}
-		}
-	} ->
-	package {
-		'libxml2-devel':	ensure => installed;
-		'spandsp-devel':	ensure => installed;
-		'libsrtp':			ensure => installed;
-		'libsrtp-devel':	ensure => installed;
-		'libogg-devel':		ensure => installed;	#for voipmonitor
-		'libvorbis-devel':	ensure => installed;	#for voipmonitor
-	} ->
+	package {['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel']:ensure => installed;} ->
 	file {$tmpdir:
 		require=>Exec['install_dahdi'],
 		ensure=>directory
@@ -67,8 +38,7 @@ class asterisk::install {
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	exec {'asterisk_service':
-##		WARNING!!! вот это вот специфично именно для редхата. надо пофиксить для дебиана и опенсусе
-		command => "cat contrib/init.d/rc.redhat.asterisk|sed 's/__ASTERISK_SBIN_DIR__/\/usr\/sbin/g' > /etc/init.d/asterisk && chmod 777 /etc/init.d/asterisk && chkconfig --add asterisk",
+		command => "cat contrib/init.d/rc.redhat.asterisk|sed 's/__ASTERISK_SBIN_DIR__/\\/usr\\/sbin/g' > /etc/init.d/asterisk && chmod 777 /etc/init.d/asterisk && chkconfig --add asterisk",
 		cwd		=> "$srcdir",
 		onlyif	=> 'which asterisk',
 		unless	=> 'ls /etc/init.d/asterisk',

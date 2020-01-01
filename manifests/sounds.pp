@@ -4,6 +4,7 @@ class asterisk::sounds {
 		ensure	=> directory,
 		source	=> 'puppet:///modules/asterisk/sounds',
 		recurse	=> true,
+		require => Service['asterisk'],
 	}
 }
 
