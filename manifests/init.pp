@@ -1,5 +1,5 @@
 class asterisk {
-	include sngrep
+#	include sngrep
 	include asterisk::install
 	mc_conf::hotlist {
 		'/etc/asterisk': ;
