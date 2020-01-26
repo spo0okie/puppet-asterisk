@@ -72,6 +72,13 @@ class asterisk::install {
 				}
 				'8': {
 					file {'/etc/systemd/system/asterisk.service': source=>'puppet:///modules/asterisk/asterisk.service'}
+					 #если по юнитфайлу есть изменения - говорим systemd перечитать его
+					exec {'asterisk_unitfile_reload':
+						command		=> 'systemctl daemon-reload',
+						subscribe	=> File['/etc/systemd/system/asterisk.service'],
+						refreshonly	=> true,
+						path		=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+					}
 				}
 			}
 		}
