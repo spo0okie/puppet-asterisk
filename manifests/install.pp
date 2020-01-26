@@ -5,24 +5,23 @@ class asterisk::install {
 	include asterisk::dahdi
 	include sox
 	#версия поставляемого астериска
-	$version='13.31.0-rc1'
 
 	#временная папка в которой будем работать
 	$tmpdir='/tmp/ast.ast_inst'
 
-	#папка исходников куда все распакуется
-	$srcdir="$tmpdir/asterisk-$version"
 
 	case $::operatingsystem {
 		'CentOS': {
 			case $::operatingsystemmajrelease {
 				'6','7': {
+					$version='11.25.1'
 					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel'];
 					package{$package_list:
 						ensure=>installed;
 					}
 				}
 				'8': {
+					$version='13.31.0-rc1'
 					#для CentOS 8 пришлось подключать репу http://repo.okay.com.mx/centos/8/x86_64/release/okay-release-1-3.el8.noarch.rpm
 					include repos::okay
 					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel','libuuid-devel','jansson-devel'];
@@ -34,6 +33,8 @@ class asterisk::install {
 			}
 		}
 	}
+	#папка исходников куда все распакуется
+	$srcdir="$tmpdir/asterisk-$version"
 	file {$tmpdir:
 		require=>Exec['install_dahdi'],
 		ensure=>directory
