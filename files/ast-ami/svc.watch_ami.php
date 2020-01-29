@@ -51,7 +51,11 @@ $usage="Correct usage is:\n"
 	."ocisrv:127.0.0.1     - Oracle server address\n"
 	."ociinst:orcl         - Oracle server instance\n"
 	."ociuser:oruser       - Oracle server user\n"
-	."ocipass:password1    - Oracle server password\n";
+	."ocipass:password1    - Oracle server password\n"
+
+	."- to translate to Web API use:"
+	."weburl:serv/ctl/     - Web API server address\n"
+;
 	
 if (!strlen($srvaddr=get_param('srvaddr'))) criterr($usage);
 if (!strlen($srvport=get_param('srvport'))) criterr($usage);
@@ -93,7 +97,17 @@ if (strlen($ocisrv=get_param('ocisrv'))) {
 	$globConnParams[]=array('ocisrv'=>$ocisrv,'ociinst'=>$ociinst,'ociuser'=>$ociuser,'ocipass'=>$ocipass);
 }
 
-if (getCurrentProcs(basename(__FILE__))>1 && $db_used) criterr('Runing second (and more) process with DB acces is forbidden.');
+//Используем ли мы вебсокеты?
+if (strlen($weburl=get_param('weburl'))) {
+	$db_used=true;
+	$globConnParams[]=array('weburl'=>$weburl);
+}
+
+
+//
+$orgphone=get_param('orgphone');
+
+if (getCurrentProcs(basename(__FILE__).' '.get_agrv_str())>1 && $db_used) criterr('Runing second (and more) process with DB acces is forbidden.');
 
 function AMI_defaultevent_handler($evt, $par, $server=NULL, $port=NULL)
 {//обработчик всех прочих событий от астериска
