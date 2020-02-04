@@ -9,7 +9,6 @@ class asterisk::install {
 	#временная папка в которой будем работать
 	$tmpdir='/tmp/ast.ast_inst'
 
-
 	case $::operatingsystem {
 		'CentOS': {
 			case $::operatingsystemmajrelease {
@@ -59,12 +58,30 @@ class asterisk::install {
 		timeout	=> 1800,
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
-	exec {'asterisk_service':
-		command => "cat contrib/init.d/rc.redhat.asterisk|sed 's/__ASTERISK_SBIN_DIR__/\\/usr\\/sbin/g' > /etc/init.d/asterisk && chmod 777 /etc/init.d/asterisk && chkconfig --add asterisk",
-		cwd		=> "$srcdir",
-		onlyif	=> 'which asterisk',
-		unless	=> 'ls /etc/init.d/asterisk',
-		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+	case $::operatingsystem {
+		'CentOS': {
+			case $::operatingsystemmajrelease {
+				'6','7': {
+					exec {'asterisk_service':
+						command => "cat contrib/init.d/rc.redhat.asterisk|sed 's/__ASTERISK_SBIN_DIR__/\\/usr\\/sbin/g' > /etc/init.d/asterisk && chmod 777 /etc/init.d/asterisk && chkconfig --add asterisk",
+						cwd		=> "$srcdir",
+						onlyif	=> 'which asterisk',
+						unless	=> 'ls /etc/init.d/asterisk',
+						path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+					}
+				}
+				'8': {
+					file {'/etc/systemd/system/asterisk.service': source=>'puppet:///modules/asterisk/asterisk.service'}
+					 #если по юнитфайлу есть изменения - говорим systemd перечитать его
+					exec {'asterisk_unitfile_reload':
+						command		=> 'systemctl daemon-reload',
+						subscribe	=> File['/etc/systemd/system/asterisk.service'],
+						refreshonly	=> true,
+						path		=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+					}
+				}
+			}
+		}
 	} ->
 	service {'asterisk':
 		ensure	=> running,

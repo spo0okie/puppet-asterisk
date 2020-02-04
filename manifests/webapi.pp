@@ -6,7 +6,7 @@ class asterisk::webapi {
 	} ->
 	file {'/var/spool/asterisk/outgoing/':
 		ensure	=> directory,
-		mode	=> 0777,
+		mode	=> '0777',
 	} ->
 	apache::vhost { "asterisk_webapi":
 		port			=> '80',
