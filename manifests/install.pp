@@ -5,6 +5,7 @@ class asterisk::install {
 	include asterisk::dahdi
 	include sox
 	#версия поставляемого астериска
+	$version='13.31.0-rc1'
 
 	#временная папка в которой будем работать
 	$tmpdir='/tmp/ast.ast_inst'
@@ -13,25 +14,23 @@ class asterisk::install {
 		'CentOS': {
 			case $::operatingsystemmajrelease {
 				'6','7': {
-					$version='11.25.1'
-					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel'];
-					package{$package_list:
-						ensure=>installed;
-					}
+					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel','libuuid-devel','jansson-devel'];
+					package{$package_list: ensure=>installed}
 				}
 				'8': {
-					$version='13.31.0-rc1'
 					#для CentOS 8 пришлось подключать репу http://repo.okay.com.mx/centos/8/x86_64/release/okay-release-1-3.el8.noarch.rpm
 					include repos::okay
 					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel','libuuid-devel','jansson-devel'];
-					package{$package_list:
-						ensure	=>installed,
-						require	=>Package['okay-release']
-					}
+					package{$package_list: ensure =>installed, require =>Package['okay-release']}
 				}
 			}
 		}
+		'Debian','Ubuntu': {
+			$package_list=['sqlite','libsqlite3-dev','libogg0','libspandsp2','libvorbis0a','libspandsp-dev','libsrtp2-1','libsrtp2-dev','libogg-dev','libvorbis-dev','uuid-dev','libjansson-dev'];
+			package{$package_list: ensure =>installed}
+		}
 	}
+
 	#папка исходников куда все распакуется
 	$srcdir="$tmpdir/asterisk-$version"
 	file {$tmpdir:
@@ -41,8 +40,10 @@ class asterisk::install {
 	file {"$tmpdir/asterisk.tar.gz":
 		ensure	=> file,
 		source	=> "puppet:///modules/asterisk/asterisk-${version}.tar.gz",
+		
 	} ->
 	exec {'asterisk_extract':
+		require => Exec['clean_asterisk_sources'],
 		command	=> "tar -zxvf ./asterisk.tar.gz",
 		cwd		=> $tmpdir,
 		onlyif	=> "which ${asterisk::dahdi::checkfile}",							#устанавливаем астериск только после dahdi
@@ -54,7 +55,7 @@ class asterisk::install {
 		require	=> Package[$pakage_list],
 		cwd		=> $srcdir,
 		onlyif	=> "which ${asterisk::dahdi::checkfile}",							#устанавливаем астериск только после dahdi
-		unless	=> 'which asterisk > /dev/null && test -f /usr/lib64/asterisk/modules/res_srtp.so',
+		unless	=> 'which asterisk > /dev/null && test -f /usr/lib64/asterisk/modules/res_srtp.so && asterisk -V|grep spoo',
 		timeout	=> 1800,
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
@@ -82,10 +83,26 @@ class asterisk::install {
 				}
 			}
 		}
+		'Debian','Ubuntu': {
+			file {'/etc/systemd/system/asterisk.service': source=>'puppet:///modules/asterisk/asterisk.service'}
+			#если по юнитфайлу есть изменения - говорим systemd перечитать его
+			exec {'asterisk_unitfile_reload':
+				command		=> 'systemctl daemon-reload',
+				subscribe	=> File['/etc/systemd/system/asterisk.service'],
+				refreshonly	=> true,
+				path		=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+			}
+		}
 	} ->
 	service {'asterisk':
 		ensure	=> running,
 		enable	=> true
+	}
+	exec {'clean_asterisk_sources':
+		command		=> "rm -rf $srcdir",
+		subscribe	=> File["$tmpdir/asterisk.tar.gz"],
+		refreshonly	=> true,
+		path		=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	}
 }
 
