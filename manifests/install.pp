@@ -5,6 +5,7 @@ class asterisk::install {
 	include asterisk::dahdi
 	include sox
 	#версия поставляемого астериска
+	$version='13.31.0-rc1'
 
 	#временная папка в которой будем работать
 	$tmpdir='/tmp/ast.ast_inst'
@@ -13,30 +14,20 @@ class asterisk::install {
 		'CentOS': {
 			case $::operatingsystemmajrelease {
 				'6','7': {
-					$version='11.25.1'
-					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel'];
-					package{$package_list:
-						ensure=>installed;
-					}
+					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel','libuuid-devel','jansson-devel'];
+					package{$package_list: ensure=>installed}
 				}
 				'8': {
-					$version='13.31.0-rc1'
 					#для CentOS 8 пришлось подключать репу http://repo.okay.com.mx/centos/8/x86_64/release/okay-release-1-3.el8.noarch.rpm
 					include repos::okay
 					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel','libuuid-devel','jansson-devel'];
-					package{$package_list:
-						ensure	=>installed,
-						require	=>Package['okay-release']
-					}
+					package{$package_list: ensure =>installed, require =>Package['okay-release']}
 				}
 			}
 		}
 		'Debian','Ubuntu': {
-			$version='13.31.0-rc1'
 			$package_list=['sqlite','libsqlite3-dev','libogg0','libspandsp2','libvorbis0a','libspandsp-dev','libsrtp2-1','libsrtp2-dev','libogg-dev','libvorbis-dev','uuid-dev','libjansson-dev'];
-			package{$package_list:
-				ensure	=>installed,
-			}
+			package{$package_list: ensure =>installed}
 		}
 	}
 
