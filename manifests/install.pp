@@ -41,8 +41,10 @@ class asterisk::install {
 	file {"$tmpdir/asterisk.tar.gz":
 		ensure	=> file,
 		source	=> "puppet:///modules/asterisk/asterisk-${version}.tar.gz",
+		
 	} ->
 	exec {'asterisk_extract':
+		require => Exec['clean_asterisk_sources'],
 		command	=> "tar -zxvf ./asterisk.tar.gz",
 		cwd		=> $tmpdir,
 		onlyif	=> "which ${asterisk::dahdi::checkfile}",							#устанавливаем астериск только после dahdi
@@ -54,7 +56,7 @@ class asterisk::install {
 		require	=> Package[$pakage_list],
 		cwd		=> $srcdir,
 		onlyif	=> "which ${asterisk::dahdi::checkfile}",							#устанавливаем астериск только после dahdi
-		unless	=> 'which asterisk > /dev/null && test -f /usr/lib64/asterisk/modules/res_srtp.so',
+		unless	=> 'which asterisk > /dev/null && test -f /usr/lib64/asterisk/modules/res_srtp.so && asterisk -V|grep -spoo',
 		timeout	=> 1800,
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
@@ -86,6 +88,12 @@ class asterisk::install {
 	service {'asterisk':
 		ensure	=> running,
 		enable	=> true
+	}
+	exec {'clean_asterisk_sources':
+		command		=> "rm -rf $srcdir",
+		subscribe	=> File["$tmpdir/asterisk.tar.gz"],
+		refreshonly	=> true,
+		path		=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	}
 }
 
