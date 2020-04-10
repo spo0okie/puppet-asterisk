@@ -31,6 +31,16 @@ class asterisk::install {
 				}
 			}
 		}
+		'Debian','Ubuntu': {
+			$version='13.31.0-rc1'
+			#для CentOS 8 пришлось подключать репу http://repo.okay.com.mx/centos/8/x86_64/release/okay-release-1-3.el8.noarch.rpm
+			#include repos::okay
+			$package_list=['sqlite','libsqlite3-dev','libogg0','libspandsp2','libvorbis0a','libspandsp-dev','libsrtp2-1','libsrtp2-dev','libogg-dev','libvorbis-dev','uuid-dev','libjansson-dev'];
+			package{$package_list:
+				ensure	=>installed,
+				#require	=>Package['okay-release']
+			}
+		}
 	}
 	#папка исходников куда все распакуется
 	$srcdir="$tmpdir/asterisk-$version"
@@ -82,6 +92,16 @@ class asterisk::install {
 						path		=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 					}
 				}
+			}
+		}
+		'Debian','Ubuntu': {
+			file {'/etc/systemd/system/asterisk.service': source=>'puppet:///modules/asterisk/asterisk.service'}
+			#если по юнитфайлу есть изменения - говорим systemd перечитать его
+			exec {'asterisk_unitfile_reload':
+				command		=> 'systemctl daemon-reload',
+				subscribe	=> File['/etc/systemd/system/asterisk.service'],
+				refreshonly	=> true,
+				path		=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 			}
 		}
 	} ->

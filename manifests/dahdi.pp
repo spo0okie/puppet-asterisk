@@ -25,6 +25,10 @@ class asterisk::dahdi {
 				}
 			}
 		}
+		'Debian','Ubuntu': {
+			$dahdi_ver='3.1.0'
+			$buildcmd="tar -zxvf ./dahdi.tar.gz && cd dahdi-linux-complete-${dahdi_ver}+${dahdi_ver} && make all && make install"
+		}
 	}
 	file {$tmpdir:
 		ensure=>directory
@@ -38,7 +42,7 @@ class asterisk::dahdi {
 		cwd		=> $tmpdir,
 		unless	=> "which $checkfile",
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
-		require => Package['kernel-devel'],
+		#require => Package['kernel-devel'],
 	}
 }
 
