@@ -42,7 +42,6 @@ class asterisk::dahdi {
 		'Debian','Ubuntu': {
 			exec {'install_dahdi':
 				command	=> 'apt install dahdi -y',
-				cwd		=> $tmpdir,
 				unless	=> "which $checkfile",
 				path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
 			}
