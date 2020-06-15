@@ -15,7 +15,6 @@ class asterisk::mcedit {
 	file_line { "mcedit_asterisk_syntax_include":
 		path => '/etc/mc/Syntax',
 		line => 'include asterisk.syntax',
-		#а тут у нас экранированная предыдущая строка АХАХАХАХААА *c нотками истерики*
-		after => '^file exten\\\.\\\*\\\\\.'
+		after => '^file exten'
 	}
 }
