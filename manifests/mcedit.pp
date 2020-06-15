@@ -7,9 +7,9 @@ class asterisk::mcedit {
   file_line { "mcedit_asterisk_syntax_mask":
 		path => '/etc/mc/Syntax',
 		line => 'file ..\*\\.(conf)$ Config\sFile',
-    after => 'include syntax.syntax\n\n'
+    after => 'include syntax.syntax'
 	} ->
-  file_line { "mcedit_asterisk_syntax_mask":
+  file_line { "mcedit_asterisk_syntax_include":
 		path => '/etc/mc/Syntax',
 		line => 'include asterisk.syntax',
     after => 'file ..\*\\.(conf)$ Config\sFile'
