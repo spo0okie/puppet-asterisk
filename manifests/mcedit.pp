@@ -10,12 +10,12 @@ class asterisk::mcedit {
 		#вторым параметром экранированный regexp конфига астериска
 		#допустим он выглядит так: exten.*.conf$, тогда:
 		line => 'file exten\.\*\\.(conf)$ Config\sFile',
-		after => 'include syntax.syntax'
+		after => 'include syntax.syntax\n'
 	} ->
 	file_line { "mcedit_asterisk_syntax_include":
 		path => '/etc/mc/Syntax',
 		line => 'include asterisk.syntax',
 		#а тут у нас экранированная предыдущая строка АХАХАХАХААА *c нотками истерики*
-		after => 'file exten\\\.\\\*\\\\\.\(conf\)\$ Config\\sFile'
+		after => '^file exten\\\.\\\*\\\\\.'
 	}
 }
