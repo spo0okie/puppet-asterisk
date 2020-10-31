@@ -42,7 +42,7 @@ class asterisk::dahdi {
 		cwd		=> $tmpdir,
 		unless	=> "which $checkfile",
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
-		#require => Package['kernel-devel'],
+		require => Package[$::common::kernel_devel],
 	}
 }
 
