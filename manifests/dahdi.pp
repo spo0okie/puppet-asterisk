@@ -24,10 +24,27 @@ class asterisk::dahdi {
 					$buildcmd="tar -zxvf ./dahdi.tar.gz && cd dahdi-linux-complete-${dahdi_ver}+${dahdi_ver} && make all && make install"
 				}
 			}
+			file {$tmpdir:
+				ensure=>directory
+			} ->
+			file {"$tmpdir/dahdi.tar.gz":
+				ensure	=> file,
+				source	=> "puppet:///modules/asterisk/dahdi-linux-complete-${dahdi_ver}.tar.gz",
+			} ->
+			exec {'install_dahdi':
+				command	=> $buildcmd,
+				cwd		=> $tmpdir,
+				unless	=> "which $checkfile",
+				path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
+				#require => Package['kernel-devel'],
+			}			
 		}
 		'Debian','Ubuntu': {
-			$dahdi_ver='3.1.0'
-			$buildcmd="tar -zxvf ./dahdi.tar.gz && cd dahdi-linux-complete-${dahdi_ver}+${dahdi_ver} && make all && make install"
+			exec {'install_dahdi':
+				command	=> 'apt install dahdi -y',
+				unless	=> "which $checkfile",
+				path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
+			}
 		}
 	}
 	file {$tmpdir:

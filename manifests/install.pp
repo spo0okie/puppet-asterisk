@@ -56,7 +56,7 @@ class asterisk::install {
 		require	=> Package[$pakage_list],
 		cwd		=> $srcdir,
 		onlyif	=> "which ${asterisk::dahdi::checkfile}",							#устанавливаем астериск только после dahdi
-		unless	=> "which asterisk > /dev/null && test -f /usr/lib64/asterisk/modules/res_srtp.so && asterisk -V|grep $version && asterisk -V|grep spoo",
+		unless	=> "which asterisk > /dev/null && test -f /usr/lib64/asterisk/modules/res_phoneprov.so && asterisk -V|grep $version && asterisk -V|grep spoo",
 		timeout	=> 1800,
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
 		notify	=> Service['asterisk'],
