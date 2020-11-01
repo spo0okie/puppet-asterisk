@@ -14,7 +14,7 @@ class asterisk::dahdi {
 						cwd		=> $tmpdir,
 						unless	=> "which $checkfile",
 						path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
-						require => Package['kernel-devel'],
+						require => Package[$::common::kernel_devel],
 					}
 					$dahdi_ver='2.11.1'
 					$buildcmd="tar -zxvf ./dahdi.tar.gz && cd dahdi-linux-complete-${dahdi_ver}+${dahdi_ver} && make && make install"
@@ -36,7 +36,7 @@ class asterisk::dahdi {
 				cwd		=> $tmpdir,
 				unless	=> "which $checkfile",
 				path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
-				#require => Package['kernel-devel'],
+				require => Package[$::common::kernel_devel],
 			}			
 		}
 		'Debian','Ubuntu': {
@@ -46,20 +46,6 @@ class asterisk::dahdi {
 				path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
 			}
 		}
-	}
-	file {$tmpdir:
-		ensure=>directory
-	} ->
-	file {"$tmpdir/dahdi.tar.gz":
-		ensure	=> file,
-		source	=> "puppet:///modules/asterisk/dahdi-linux-complete-${dahdi_ver}.tar.gz",
-	} ->
-	exec {'install_dahdi':
-		command	=> $buildcmd,
-		cwd		=> $tmpdir,
-		unless	=> "which $checkfile",
-		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
-		require => Package[$::common::kernel_devel],
 	}
 }
 
