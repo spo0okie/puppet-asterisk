@@ -6,6 +6,8 @@ class asterisk::install {
 	include sox
 	#версия поставляемого астериска
 	$version='13.31.0-rc1'
+	#мажорная версия
+	$version_maj='13'
 	#$version='11.25.1'
 
 	#временная папка в которой будем работать
