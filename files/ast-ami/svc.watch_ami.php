@@ -1,21 +1,22 @@
 #!/usr/bin/php -q
 <?php
-/* Файл сбора сообщений из AMI и слива во внешние хранилища данных
+/**
+ * Файл сбора сообщений из AMI и слива во внешние хранилища данных
  * на текущий момент поддерживаются:
  * - вывод в консоль 
  * - запись в БД Oracle
  * - запись в канал WebSockets (не проверялось давно, и с тех пор много кода поменялось) */
 
-//прикладные функции работы с логом файлами и проч. 
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'funcs.inc.php');	
 //библиотека работы с астериском
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'phpagi.php');
+require_once 'vendor/autoload.php';
+//прикладные функции работы с логом файлами и проч.
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'funcs.inc.php');	
 //класс коннекторов к получателям данных
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'class.extConnector.php');	
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'dataConnectors' . DIRECTORY_SEPARATOR . 'globDataConnector.php');
 //класс коннекторa к asterisk AMI
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'class.amiConnector.php');	
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'astConnector' . DIRECTORY_SEPARATOR . 'astConnector.php');
 //класс управления списком каналов
-require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'class.chans.php');	
+require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'chanList.php');
 
 error_reporting(E_ALL);
 
@@ -55,6 +56,9 @@ $usage="Correct usage is:\n"
 
 	."- to translate to Web API use:"
 	."weburl:serv/ctl/     - Web API server address\n"
+
+	."- to translate chan_events to Web API use:"
+	."weburl_chan:serv/ctl/     - Web API server address\n"
 ;
 	
 if (!strlen($srvaddr=get_param('srvaddr'))) criterr($usage);
@@ -97,19 +101,24 @@ if (strlen($ocisrv=get_param('ocisrv'))) {
 	$globConnParams[]=array('ocisrv'=>$ocisrv,'ociinst'=>$ociinst,'ociuser'=>$ociuser,'ocipass'=>$ocipass);
 }
 
-//Используем ли мы вебсокеты?
+//Используем ли мы WEB-API?
 if (strlen($weburl=get_param('weburl'))) {
 	$db_used=true;
 	$globConnParams[]=array('weburl'=>$weburl);
 }
 
+//Используем ли мы WEB-API для инф о каналах?
+if (strlen($weburl_chan=get_param('weburl_chan'))) {
+	$db_used=true;
+	$globConnParams[]=array('weburl_chan'=>$weburl_chan);
+}
 
 //
 $orgphone=get_param('orgphone');
 
 if (getCurrentProcs(basename(__FILE__).' '.get_agrv_str())>1 && $db_used) criterr('Runing second (and more) process with DB acces is forbidden.');
 
-function AMI_defaultevent_handler($evt, $par, $server=NULL, $port=NULL)
+function AMI_default_event_handler($evt, $par, $server=NULL, $port=NULL)
 {//обработчик всех прочих событий от астериска
  //на нем висит перезапись файла сердцебиения и перерисовка курсора в консольке
  //имя файла формируется по имени этого файла
@@ -121,6 +130,8 @@ function AMI_defaultevent_handler($evt, $par, $server=NULL, $port=NULL)
 	//но для понимания картины событий можно и глянуть время от времени
 	//msg('Got evt "'.$evt.'"');
 	//print_r($par);
+	global $AMIconnector;
+	echo is_object($AMIconnector)?$AMIconnector->astStatus():'uninitialized';
 	con_rotor();					//update con
 	pidWriteSvc(basename(__FILE__));//heartbeat file
 	//файл сердцебиения сервиса. 
@@ -129,6 +140,7 @@ function AMI_defaultevent_handler($evt, $par, $server=NULL, $port=NULL)
 	//если время обновления файла будет больше какого-то времени
 	//то имеет смысл убить процесс (PID на этот случай в файле)
 	//и создать новый экземпляр
+	return null;
 }	
 
 //Коннектор к внешним БД
@@ -138,7 +150,16 @@ $DBconnector = new globDataConnector($globConnParams);
 $chans = new chanList($DBconnector);
 
 //Коннектор к AMI подключается к списку каналов чтобы передавать в него информацию о событиях поступающих от Asterisk
-$AMIconnector = new astConnector(array('server'=>$srvaddr,'port'=>$srvport,'username'=>$srvuser,'secret'=>$srvpass),$chans,'AMI_defaultevent_handler');
+$AMIconnector = new astConnector(
+	[
+		'server'=>$srvaddr,
+		'port'=>$srvport,
+		'username'=>$srvuser,
+		'secret'=>$srvpass
+	],
+	$chans,
+	'AMI_defaultevent_handler'
+);
 
 $p=basename(__FILE__).'('.$DBconnector->getType().'): '; //msg prefix
 
@@ -164,9 +185,15 @@ while (true) {
 			msg($p.'Loop exited. ');
 			$DBconnector->disconnect();
 
-		} else msg ($p.'Err connecting data recivers');
+		} else {
+		    msg ($p.'Err connecting data recivers');
+		    exit(10); //прибиваем процесс полностью, т.к. творится загадочная хрень
+        }
 
-	} else msg ($p.'Err connecting AMI.');
+	} else {
+	    msg ($p.'Err connecting AMI.');
+        exit(12); //прибиваем процесс полностью, т.к. творится загадочная хрень
+    }
 
 	$AMIconnector->disconnect();
 
