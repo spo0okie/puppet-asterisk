@@ -15,7 +15,7 @@ class controller_sms {
 	const MSG_OK='OK';
 	
 	public function __construct(){
-		exec('which gammu',$out);
+		exec('which gammu-smsd-inject',$out);
 		$this->gammu_path=isset($out[0])?$out[0]:false;
 	}
 	
@@ -40,10 +40,35 @@ class controller_sms {
 	private function send($text,$addr){
 		if (!strlen($text)) return controller_sms::MSG_NO_TEXT;
 		if (!strlen($addr)) return controller_sms::MSG_NO_ADDR;
-		$params='sendsms TEXT '.$addr.' -text "'.addslashes($text).'" -unicode';
+		$phone=$this->get_phone();
+		$params='--config /etc/gammu-smsd-'.$phone.' TEXT '.$addr.' -text "'.addslashes($text).'" -unicode -autolen '.strlen($text);
+		//TEXT 89193393655 -unicode -text "$text" -autolen ${#text}
+		error_log($params);
 		return $this->run($params);
 	}
-	
+
+
+
+	private function get_phone() {
+		$db=mysql_connect('localhost','smsd','smsdPa55wd','gammu_smsd');
+		mysql_query('use gammu_smsd',$db);
+		$req_obj=mysql_query('select ID from phones order by ID;',$db);
+		$phones=array();
+		while (is_array($row=mysql_fetch_assoc($req_obj))) {
+			$phones[]=$row['ID'];
+		}
+		$req_obj=mysql_query('select id from phone_use order by id;',$db);
+		$row=mysql_fetch_assoc($req_obj);
+		$phone= ($row['id']+1) % count($phones);
+		mysql_query('delete from phone_use;',$db);
+		$q='insert into phone_use values('.$phone.',"");';
+		error_log($q);
+		mysql_query($q,$db);
+		error_log( mysql_error($db));
+		return $phones[$phone];
+	}
+
+
 	/*
 	 * отправляет СМС беря адрес и текст из URL
 	 */

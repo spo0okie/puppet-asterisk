@@ -12,8 +12,8 @@ class asterisk::webapi {
 		port			=> '80',
 		servername		=> "${::fqdn}",
 		docroot			=> '/var/www/ast-webapi/',
-		docroot_owner	=> 'apache',
-		docroot_group	=> 'apache',
+		docroot_owner	=> $::apache::params::user,
+		docroot_group	=> $::apache::params::group,
 		docroot_mode	=> '0770',
 		directoryindex	=> 'api2.php',
 		rewrites	=> [

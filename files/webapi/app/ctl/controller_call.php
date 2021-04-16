@@ -57,6 +57,11 @@ class controller_call {
 		elseif (is_null($to))	echo controller_call::MSG_NO_TO;
 		else echo controller_call::initiateCall($from, $to);
 	}
+
+	public function action_event(){
+		$body = file_get_contents('php://input');
+		error_log(print_r($body,true));
+	}
 	
 }
 

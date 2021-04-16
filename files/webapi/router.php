@@ -52,8 +52,11 @@ class router
 	 */
 	static public function getRoute($num,$var,$def=NULL)
 	{
-		if (!is_array(router::$route)) 
-			router::$route=explode('/', $_SERVER['REQUEST_URI']);
+		if (!is_array(router::$route)) {
+		    $noArgs=explode('?', $_SERVER['REQUEST_URI'])[0];
+            router::$route=explode('/', $noArgs);
+        }
+
 
 		if ( !empty($_GET[$var]) )
 			return $_GET[$var];
