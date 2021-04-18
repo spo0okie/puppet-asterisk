@@ -17,7 +17,7 @@ class asterisk::mcedit {
     #тут у нас судя по man mcedit (https://www.systutorials.com/docs/linux/man/1-mcedit/) должно быть
     #вторым параметром экранированный regexp конфига астериска
     #допустим он выглядит так: exten.*.conf$, тогда:
-    line => 'file exten\.\*\\.(conf)$ Config\sFile',
+    line => 'file /etc/asterisk/\.\*\\.(conf)$ Config\sFile',
     after => 'include syntax.syntax\n'
   } ->
   file_line { "mcedit_asterisk_syntax_include":
