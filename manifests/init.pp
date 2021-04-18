@@ -1,4 +1,13 @@
 class asterisk {
+  case $::operatingsystem {
+    'CentOS': {
+      $libdir='/usr/lib64'
+    }
+    'Debian','Ubuntu': {
+      $libdir='/usr/lib'
+    }
+  }
+
 #	include sngrep
 	include asterisk::install
 	mc_conf::hotlist {

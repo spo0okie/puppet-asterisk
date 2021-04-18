@@ -15,7 +15,6 @@ class asterisk::install {
 
 	case $::operatingsystem {
 		'CentOS': {
-			$libdir='/usr/lib64'
 			case $::operatingsystemmajrelease {
 				'6','7': {
 					$package_list=['sqlite','sqlite-devel','libogg','spandsp','libvorbis','spandsp-devel','libsrtp','libsrtp-devel','libogg-devel','libvorbis-devel','libuuid-devel','jansson-devel'];
@@ -30,7 +29,6 @@ class asterisk::install {
 			}
 		}
 		'Debian','Ubuntu': {
-			$libdir='/usr/lib'
 			$package_list=['sqlite','libsqlite3-dev','libogg0','libspandsp2','libvorbis0a','libspandsp-dev','libsrtp2-1','libsrtp2-dev','libogg-dev','libvorbis-dev','uuid-dev','libjansson-dev'];
 			package{$package_list: ensure =>installed}
 		}
@@ -56,11 +54,11 @@ class asterisk::install {
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	exec {'asterisk_install':
-		command	=> "$srcdir/configure --libdir=$libdir && make menuselect.makeopts && menuselect/menuselect --enable res_srtp --enable res_fax --enable app_meetme --enable chan_ooh323 --disable-asteriskssl && make clean && make && make install",
+		command	=> "$srcdir/configure --libdir=${asterisk::libdir} && make menuselect.makeopts && menuselect/menuselect --enable res_srtp --enable res_fax --enable app_meetme --enable chan_ooh323 --disable-asteriskssl && make clean && make && make install",
 		require	=> Package[$pakage_list],
 		cwd		=> $srcdir,
 		onlyif	=> "which ${asterisk::dahdi::checkfile}",							#устанавливаем астериск только после dahdi
-		unless	=> "which asterisk > /dev/null && test -f $libdir/asterisk/modules/res_phoneprov.so && asterisk -V|grep $version && asterisk -V|grep spoo",
+		unless	=> "which asterisk > /dev/null && test -f ${asterisk::libdir}/asterisk/modules/res_phoneprov.so && asterisk -V|grep $version && asterisk -V|grep spoo",
 		timeout	=> 1800,
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
 		notify	=> Service['asterisk'],
