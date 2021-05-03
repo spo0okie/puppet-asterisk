@@ -7,6 +7,10 @@ class asterisk::mcedit {
        $syntaxConfig='/usr/share/mc/syntax/Syntax'
     }
   }
+  #тут у нас судя по man mcedit (https://www.systutorials.com/docs/linux/man/1-mcedit/) должно быть
+  #вторым параметром экранированный regexp конфига астериска
+  #допустим он выглядит так: /etc/asterisk/.*.conf$, тогда:
+  $fileRegexLine='file /etc/asterisk/\.\*\.(conf)$ Config\sFile'
   file {"/usr/share/mc/syntax/asterisk.syntax":
     ensure	=> file,
     source	=> 'puppet:///modules/asterisk/mcedit/asterisk.syntax',
@@ -14,15 +18,12 @@ class asterisk::mcedit {
   } ->
   file_line { "mcedit_asterisk_syntax_mask":
     path => $syntaxConfig,
-    #тут у нас судя по man mcedit (https://www.systutorials.com/docs/linux/man/1-mcedit/) должно быть
-    #вторым параметром экранированный regexp конфига астериска
-    #допустим он выглядит так: exten.*.conf$, тогда:
-    line => 'file /etc/asterisk/\.\*\\.(conf)$ Config\sFile',
-    after => 'include syntax.syntax\n'
+    line => $fileRegexLine,
+    after => 'include syntax.syntax'
   } ->
   file_line { "mcedit_asterisk_syntax_include":
     path => $syntaxConfig,
     line => 'include asterisk.syntax',
-    after => '^file exten'
+    after => '^file /etc/asterisk/'
   }
 }

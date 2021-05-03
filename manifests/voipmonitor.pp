@@ -2,29 +2,29 @@ class asterisk::voipmonitor {
 	$tmpdir='/tmp/ast.voipmon_inst'
 	$guidir='/var/www/voipmonitor_gui'
 	include asterisk
-	include asterisk::snappy_install
-	include mysql_server
-	class {'php': version=>'56'} ->
+	#include asterisk::snappy_install
+	include mysql_client
+	#class {'php': version=>'56'} ->
 	#сlass {'apache::mod::php': package_name => 'php56'}
 	file {"$tmpdir":
 		ensure=>directory
 	} ->
 	file {"$tmpdir/voipmon.tar.gz":
 		ensure	=> file,
-		source	=> 'puppet:///modules/asterisk/voipmonitor-19.2-src.tar.gz',
+		source	=> 'puppet:///modules/asterisk/voipmonitor-27.8-src.tar.gz',
 	} ->
 	file {"$tmpdir/gui.tar.gz":
 		ensure	=> file,
-		source	=> 'puppet:///modules/asterisk/voipmonitor-gui-16.24-SVN.56.tar.gz',
+		source	=> 'puppet:///modules/asterisk/voipmonitor-gui-24.62-SVN.71.tar.gz',
 	} ->
 	file {"$guidir":
 		ensure	=> directory,
-		owner	=> 'apache',
+		owner	=> $::apache::params::user,
 		mode	=> '0755',
 	} ->
 	file {"/var/spool/voipmonitor/":
 		ensure	=> directory,
-		owner	=> 'apache',
+		owner	=> $::apache::params::user,
 		mode	=> '0777',
 	} ->
 	file {"/etc/rsyslog.d/voipmonitor.conf":
@@ -34,20 +34,27 @@ class asterisk::voipmonitor {
 		notify => Service['rsyslog']
 	} ->
 	package {
-		'unixODBC-devel':		ensure => installed;
-		'libcurl-devel':		ensure => installed;
-		'json-c-devel':			ensure => installed;
-		'rrdtool-devel':		ensure => installed;
-		'glib2-devel':			ensure => installed;
-		'urw-fonts':			ensure => installed;
-		'librsvg2':				ensure => installed;
+		[
+			'unixodbc-dev',
+			'libcurl4-nss-dev',
+			'libcurl4-openssl-dev',
+			'libcurl4-gnutls-dev',
+			'libjson-c-dev',
+			'librrd-dev',
+			'libglib2.0-dev',
+			'fonts-urw-base35',
+			'librsvg2-2',
+			'libsnappy-dev',
+		]:
+		ensure => installed;
 	} ->
 	exec {'install_voipmonitor':
 		command	=> 'tar -zxvf ./voipmon.tar.gz && cd voipmonitor*src && ./configure --libdir=/usr/lib64 && make && make install',
 		cwd		=> $tmpdir,
 		unless	=> 'which voipmonitor',
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin',
-		require => Package['kernel-devel'],
+		timeout => 1800,
+		require => Package[$common::packages::kernel_devel],
 	} ->
 	exec {'install_voipmonitor_conf':
 		command => 'echo tst && cd voipmonitor*src && cp config/voipmonitor.conf /etc/',
@@ -62,7 +69,7 @@ class asterisk::voipmonitor {
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	exec {'install_voipmonitor_gui':
-		command => "tar -zxvf ./gui.tar.gz && cd voipmonitor-gui-* && cp -r . $guidir && chown -R apache $guidir",
+		command => "tar -zxvf ./gui.tar.gz && cd voipmonitor-gui-* && cp -r . $guidir && chown -R ${apache::param::user} $guidir",
 		cwd		=> $tmpdir,
 		unless	=> "test -f $guidir/cdr.php",
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
@@ -75,17 +82,31 @@ class asterisk::voipmonitor {
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	exec {'install_ioncube':
-		command => 'wget --no-continue http://voipmonitor.org/ioncube/x86_64/ioncube_loader_lin_5.6.so -O /opt/remi/php56/root/usr/lib64/php/modules/ioncube_loader_lin_5.6.so',
+		command => 'wget --no-continue http://voipmonitor.org/ioncube/x86_64/ioncube_loader_lin_7.3.so -O /usr/lib/php/20180731/ioncube_loader_lin_7.3.so',
 		cwd		=> $tmpdir,
-		unless	=> 'test -f /opt/remi/php56/root/usr/lib64/php/modules/ioncube_loader_lin_5.6.so',
-		notify	=> Service['httpd'],
+		unless	=> 'test -f /usr/lib/php/20180731/ioncube_loader_lin_7.3.so',
+		notify	=> Service[$apache::service_name],
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	exec {'install_ioncube_conf':
-		command => 'echo "zend_extension = /opt/remi/php56/root/usr/lib64/php/modules/ioncube_loader_lin_5.6.so" > /opt/remi/php56/root/etc/php.d/ioncube.ini',
+		command => 'echo "zend_extension = /usr/lib/php/20180731/ioncube_loader_lin_7.3.so" > /etc/php/7.3/mods-available/ioncube.ini',
 		cwd		=> $tmpdir,
-		unless	=> 'test -f /opt/remi/php56/root/etc/php.d/ioncube.ini',
-		notify	=> Service['httpd'],
+		unless	=> 'test -f /etc/php/7.3/mods-available/ioncube.ini',
+		notify	=> Service[$apache::service_name],
+		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+	} ->
+	exec {'install_ioncube_conf_apache':
+		command => 'ln -s /etc/php/7.3/mods-available/ioncube.ini /etc/php/7.3/apache2/conf.d/01-ioncube.ini',
+		cwd		=> $tmpdir,
+		unless	=> 'test -f /etc/php/7.3/apache2/conf.d/01-ioncube.ini',
+		notify	=> Service[$apache::service_name],
+		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
+	} ->
+	exec {'install_ioncube_conf_cli':
+		command => 'ln -s /etc/php/7.3/mods-available/ioncube.ini /etc/php/7.3/cli/conf.d/01-ioncube.ini',
+		cwd		=> $tmpdir,
+		unless	=> 'test -f /etc/php/7.3/cli/conf.d/01-ioncube.ini',
+		notify	=> Service[$apache::service_name],
 		path	=> '/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin'
 	} ->
 	service {'voipmonitor':
@@ -107,7 +128,6 @@ class asterisk::voipmonitor {
 		source	=> 'puppet:///modules/asterisk/voipmon.cdr.trim.sh',
 		mode => '0755',
 	}
-
 
 }
 
