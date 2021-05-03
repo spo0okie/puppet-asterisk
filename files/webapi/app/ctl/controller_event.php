@@ -3,6 +3,10 @@
  * Класс регистрации событий от ВАТС интерсвязи
  */
 
+/**
+ * Class controller_event
+ */
+
 
 class controller_event {
 	const tmp_folder='/tmp';
@@ -80,7 +84,7 @@ class controller_event {
 		oci_close($this->oci);
 	}
 
-		
+
 	private function sendData($data) {
 		date_default_timezone_set('Asia/Yekaterinburg');
 		/*
@@ -134,17 +138,18 @@ class controller_event {
 
 		$stid = oci_parse($this->oci, $oci_command);
 		error_log("Data sent to Oracle: ".$oci_command);
+
 		if (!oci_execute($stid)) static::halt(static::ERR_ORACLE_ERR);
 	}
 
 	/*
 	{
-		"type": "call_event", 
+		"type": "call_event",
 		"params": {
 			"src_phone": "79193393655",
-			"dst_phone": "73512250698", 
-			"event_date": "2019-02-13 22:56:53.685954", 
-			"call_id": "120a0a1e7473036e24ed0cc44d1dd970", 
+			"dst_phone": "73512250698",
+			"event_date": "2019-02-13 22:56:53.685954",
+			"call_id": "120a0a1e7473036e24ed0cc44d1dd970",
 			"event_name":
 				start.call          //начало вызова - с внешнего на внешний
 			    local.in.call       //вызов на внутренний
@@ -154,14 +159,14 @@ class controller_event {
 	}
 
 	{
-		"type": "call_event", 
+		"type": "call_event",
 		"params": {
-			"real_local_number": "105", 
-			"event_date": "2019-02-13 22:56:53.724717", 
-			"call_id": "120a0a1e7473036e24ed0cc44d1dd970", 
+			"real_local_number": "105",
+			"event_date": "2019-02-13 22:56:53.724717",
+			"call_id": "120a0a1e7473036e24ed0cc44d1dd970",
 			"event_name": "local.in.call"
-			"src_phone": "79193393655", 
-			"dst_phone": "73512250698", 
+			"src_phone": "79193393655",
+			"dst_phone": "73512250698",
 		}
 	}
 	*/
@@ -175,54 +180,55 @@ class controller_event {
 	 */
 	private function form_data($params) {
 
+	    $monitor_tokens=explode('-',$params->call_id);
+	    if (count($monitor_tokens)<5) {
+	        $direction='';
+	        $monitor_start='';
+	        $monitor_age='';
+        } else {
+	        $direction=$monitor_tokens[3];
+            $year=substr($monitor_tokens[0],0,4);
+            $mon=substr($monitor_tokens[0],4,2);
+            $day=substr($monitor_tokens[0],6,2);
+            $hour=substr($monitor_tokens[1],0,2);
+            $min=substr($monitor_tokens[1],2,2);
+            $sec=substr($monitor_tokens[1],4,2);
+            $monitor_time="$year-$mon-$day $hour:$min:$sec";
+	        $monitor_start=strtotime($monitor_time);
+	        $monitor_age=time()-$monitor_start;
+        }
+	    $data=[
+            'src'=>$params->src_phone,
+            'orgphone'=>$params->dst_phone,
+            'monitor'=>$params->call_id,
+            'start'=>$monitor_start,
+            'age'=>$monitor_age,
+            'time'=>$monitor_time,
+            'direction'=>$direction,
+            'ndx'=>isset($params->evt_id)?$params->evt_id:''
+        ];
 		switch ($params->event_name) {
-
-
 			case static::EVT_CALL_START:
-				return [
-					'src'=>$params->src_phone,
-					'orgphone'=>$params->dst_phone,
-					'dst'=>'',
-					'state'=>'New',
-                    'monitor'=>$params->call_id,
-					'ndx'=>isset($params->evt_id)?$params->evt_id:''
-				];
+				$data['dst']='';
+                $data['state']='New';
 				break;
 			case static::EVT_CALL_END:
-				return [
-					'src'=>$params->src_phone,
-					'orgphone'=>$params->dst_phone,
-					'dst'=>isset($params->real_local_number)?$params->real_local_number:'',
-					'state'=>'Drop',
-					'monitor'=>$params->call_id,
-                    'ndx'=>isset($params->evt_id)?$params->evt_id:''
-				];
+                $data['dst']=isset($params->real_local_number)?$params->real_local_number:'';
+				$data['state']='Drop';
 				break;
 			case static::EVT_TALK_START:
 				//в случае внутреннего вызова обязательно должен быть внетренний
 				if (!isset($params->real_local_number))
 					throw new Exception(static::PARAMS_NO_LOCAL);
-				return [
-					'src'=>$params->src_phone,
-					'orgphone'=>$params->dst_phone,
-					'dst'=>$params->real_local_number,
-					'state'=>'Answ',
-					'monitor'=>$params->call_id,
-                    'ndx'=>isset($params->evt_id)?$params->evt_id:''
-				];
+                $data['dst']=$params->real_local_number;
+                $data['state']='Answ';
 				break;
 			case static::EVT_CALL_LOCAL:
 				//в случае внутреннего вызова обязательно должен быть внетренний
 				if (!isset($params->real_local_number))
 					throw new Exception(static::PARAMS_NO_LOCAL);
-				return [
-					'src'=>$params->src_phone,
-					'orgphone'=>$params->dst_phone,
-					'dst'=>$params->real_local_number,
-					'state'=>'Ring',
-					'monitor'=>$params->call_id,
-                    'ndx'=>isset($params->evt_id)?$params->evt_id:''
-				];
+                $data['dst']=$params->real_local_number;
+                $data['state']='Ring';
 				break;
 
 			case static::EVT_VM_START:
@@ -236,30 +242,81 @@ class controller_event {
 			default:
 				//выбрасываем исключение, неизвестное событие
 				throw new Exception(static::PARAMS_NO_EVENT.' "'.$params->event_name.'"');
-				break;
 		}
-		return null;
+		return $data;
 	}
 
-	private function load_connection(&$data) {
-		//подгружаем список клиентов
-		include "conf_db_list.php";
-		//error_log(print_r($conf_db_list,true));
-		foreach ($conf_db_list as $db)
-			foreach ($db['org_phones'] as $org_phone) if (static::phone_compare($data['orgphone'],$org_phone))
-			//if (array_search($data['orgphone'],$db['org_phones']))
-			{
-				$this->server=$db['server'];
-				$this->instance=$db['instance'];
-				$this->user=$db['user'];
-				$this->password=$db['passwd'];
-				$data['orgphone']=$org_phone[1].$org_phone[2];
-				return;
-			}
-		static::halt(static::ERR_UNKNOWN_CLIENT.' ['.$data['orgphone'].'] //'.$this->body);
-	}
+    private function load_connection(&$data) {
+        //подгружаем список клиентов
+        include "conf_db_list.php";
+        /**
+         * @var $GET_APIs_list array
+         * @var $conf_db_list array
+         */
+        //error_log(print_r($conf_db_list,true));
+        foreach ($conf_db_list as $db)
+            foreach ($db['org_phones'] as $org_phone) if (static::phone_compare($data['orgphone'],$org_phone))
+            {
+                $this->server=$db['server'];
+                $this->instance=$db['instance'];
+                $this->user=$db['user'];
+                $this->password=$db['passwd'];
+                $data['orgphone']=$org_phone[1].$org_phone[2];
+                return true;
+            }
+        return false;
+    }
 
-	public function action_push(){
+    /**
+     * Из списка объявленных API выбирает те, в которые с учетом объявленного фильтра нужно отправить данные
+     * @param $data вызов
+     * @return array
+     */
+    private function load_APIs(&$data) {
+        //подгружаем список клиентов
+        include "conf_db_list.php";
+        /**
+         * @var $GET_APIs_list array
+         * @var $conf_db_list array
+         */
+        // перебираем все API
+        $apis=[];
+        foreach ($GET_APIs_list as $api)
+            //все телефоны в API
+            foreach ($api['org_phones'] as $org_phone) if (
+                static::phone_compare($data['orgphone'],$org_phone)
+                && (
+                    array_search('*',$api['events'])!==false
+                    ||
+                    array_search($data['state'],$api['events'])!==false
+                )
+            ) $apis[]=$api;
+        return $apis;
+    }
+
+    public function send_GETapi($data,$api){
+        $replacements=[
+            '{aon}'=>$data['src'],
+            '{serv_ph}'=>$data['orgphone'],
+            '{inph}'=>$data['dst'],
+            '{typ}'=>$data['state'],
+            '{snd_f}'=>$data['monitor'],
+            '{len}'=>$data['age'],
+            '{start}'=>$data['start'],
+            '{time}'=>$data['time'],
+            '{direction}'=>$data['direction'],
+        ];
+        $url=$api['url'];
+
+        foreach ($replacements as $search => $replace)
+            $url=str_replace($search,$replace,$url);
+        $result=file_get_contents($url);
+        //$result='dry_run';
+        error_log("Data sent to GET method API: ".$url.': '.$result);
+
+    }
+
+    public function action_push(){
 		$body = file_get_contents('php://input');
 		$this->body=$body;
 		$err_suffx=' //'.$body;
@@ -285,17 +342,29 @@ class controller_event {
 			static::halt($e->getMessage().$err_suffx);
 		}
 
+		$dataSent=false;
 		//ищем в какой оракл затолкать
-		$this->load_connection($data);
+		if ($this->load_connection($data)) {
+            //соединяемся
+            $this->connect();
+            error_log(print_r($data,true));
+            //толкаем
+            $this->sendData($data);
+            //выкл
+            $this->disconnect();
+            $dataSent=true;
+        }
 
-		//соединяемся
-		$this->connect();
-		error_log(print_r($data,true));
-		//толкаем
-		$this->sendData($data);
-		//выкл
-		$this->disconnect();
-		die (static::OK_OK);
+		foreach ($this->load_APIs($data) as $api ){
+            $this->send_GETapi($data,$api);
+            $dataSent=true;
+        }
+
+		if ($dataSent) {
+            die (static::OK_OK);
+        } else {
+            static::halt(static::ERR_UNKNOWN_CLIENT.' ['.$data['orgphone'].'] //'.$this->body);
+        }
 	}
 
 
