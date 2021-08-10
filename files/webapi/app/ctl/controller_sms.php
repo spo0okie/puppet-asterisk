@@ -24,12 +24,12 @@ class controller_sms {
 	 * @var string $params параметры вызова gammu
 	 */
 	private function run($params){
-		setlocale('LC_ALL','ru_RU.UTF-8');
+		setlocale(LC_ALL,'ru_RU.UTF-8');
 		$out=null;
 		if (!strlen($this->gammu_path)) return controller_sms::MSG_BIN_NOT_FOUND;
 		if (exec('export LANG=ru_RU.UTF-8 && '.$this->gammu_path.' '.$params,$out)===false) return controller_sms::MSG_EXEC_ERR;
 		if (!isset($out[0])) return controller_sms::MSG_EXEC_ERR.': '.implode('|',$out);
-		if (strpos($out,'OK, ссылка на сообщение=')===false) return controller_sms::MSG_EXEC_ERR.': '.implode('|',$out);
+		if (strpos($out[0],'OK, ссылка на сообщение=')===false) return controller_sms::MSG_EXEC_ERR.': '.implode('|',$out);
 		return controller_sms::MSG_OK.': '.implode('|',$out);
 	}
 	
@@ -50,21 +50,21 @@ class controller_sms {
 
 
 	private function get_phone() {
-		$db=mysql_connect('localhost','smsd','smsdPa55wd','gammu_smsd');
-		mysql_query('use gammu_smsd',$db);
-		$req_obj=mysql_query('select ID from phones order by ID;',$db);
+		$db=mysqli_connect('localhost','smsd','smsdPa55wd','gammu_smsd');
+		mysqli_query($db,'use gammu_smsd');
+		$req_obj=mysqli_query($db,'select ID from phones order by ID;');
 		$phones=array();
-		while (is_array($row=mysql_fetch_assoc($req_obj))) {
+		while (is_array($row=mysqli_fetch_assoc($req_obj))) {
 			$phones[]=$row['ID'];
 		}
-		$req_obj=mysql_query('select id from phone_use order by id;',$db);
-		$row=mysql_fetch_assoc($req_obj);
+		$req_obj=mysqli_query($db,'select id from phone_use order by id;');
+		$row=mysqli_fetch_assoc($req_obj);
 		$phone= ($row['id']+1) % count($phones);
-		mysql_query('delete from phone_use;',$db);
+		mysqli_query($db,'delete from phone_use;');
 		$q='insert into phone_use values('.$phone.',"");';
 		error_log($q);
-		mysql_query($q,$db);
-		error_log( mysql_error($db));
+		mysqli_query($db,$q);
+		error_log( mysqli_error($db));
 		return $phones[$phone];
 	}
 

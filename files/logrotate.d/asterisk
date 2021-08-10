@@ -3,11 +3,11 @@
 /var/log/asterisk/full
 /var/log/asterisk/verbose
 /var/log/asterisk/*log {
+	daily
 	missingok
 	notifempty
 	sharedscripts
 	compress
-	delaycompress
 	olddir /var/log/asterisk/old
 	maxage 720
 	size 32M

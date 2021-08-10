@@ -9,7 +9,7 @@ class asterisk::webapi {
 		mode	=> '0777',
 	} ->
 	apache::vhost { "asterisk_webapi":
-		port			=> '80',
+		port			=> '8082',
 		servername		=> "${::fqdn}",
 		docroot			=> '/var/www/ast-webapi/',
 		docroot_owner	=> $::apache::params::user,
