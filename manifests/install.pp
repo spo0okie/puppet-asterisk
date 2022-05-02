@@ -38,7 +38,7 @@ class asterisk::install {
 			}
 		}
 		'Debian','Ubuntu': {
-			$package_list=['sqlite','libsqlite3-dev','libogg0','libspandsp2','libvorbis0a','libspandsp-dev','libsrtp2-1','libsrtp2-dev','libogg-dev','libvorbis-dev','uuid-dev','libjansson-dev'];
+			$package_list=['sqlite3','libsqlite3-dev','libogg0','libspandsp2','libvorbis0a','libspandsp-dev','libsrtp2-1','libsrtp2-dev','libogg-dev','libvorbis-dev','uuid-dev','libjansson-dev'];
 			package{$package_list: ensure =>installed, require=>Package['dahdi']}
 		}
 	} ->
