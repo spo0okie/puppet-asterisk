@@ -22,7 +22,10 @@ class asterisk::webapi {
 				rewrite_cond => ['%{REQUEST_FILENAME} !-f','%{REQUEST_FILENAME} !-d'],
 				rewrite_rule => ['.* /api2.php [L]'],
 			}
-		]
+		],
+		headers     =>  [
+			'set Access-Control-Allow-Origin "*"'
+		],
 	}->
 	mc_conf::hotlist {
 		'/var/www/ast-webapi/': ;

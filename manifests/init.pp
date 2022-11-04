@@ -18,11 +18,11 @@ class asterisk {
 	include fail2ban::asterisk
 	file {"/var/log/asterisk":
 		ensure	=> directory,
-		mode	=> '0777',
+		mode	=> '0775',
 	} ->
 	file {"/var/log/asterisk/old":
 		ensure	=> directory,
-		mode	=> '0777',
+		mode	=> '0775',
 	} ->
 	file {"/etc/logrotate.d/asterisk":
 		ensure	=> file,
